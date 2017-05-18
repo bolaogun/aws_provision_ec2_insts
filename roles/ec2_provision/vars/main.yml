@@ -1,0 +1,66 @@
+---
+aws_region: "eu-west-1"
+aws_acct_vpc_id: "vpc-c0e61fa7"
+aws_sec_group: "N001CDGSGR00400"
+aws_instance_type: "t2.micro"
+aws_quantity: "1"
+aws_vpc_subnet_id: "subnet-b6e327ff"
+aws_image: "ami-02ace471"
+aws_keypair: "almtools"
+aws_s3_bucket_nm: "almtools"
+private_key_file: "/tmp/{{ app_nm }}.pem"
+inst_nm: "N001CDGSVR00400"
+app_nm: "almtools"
+env_nm: "Non-Production"
+all_inst_nms:
+  - N001CDGSVR004001
+  - N001CDGSVR004002
+#  - N001CDGSVR004003
+#  - N001CDGSVR004004
+#  - N001CDGSVR004005
+#  - N001CDGSVR004006
+#  - N001CDGSVR004007
+  - N001CDGSVR004008
+#  - N001CDGSVR004009
+#  - N001CDGSVR004010
+all_inst_apps:
+  N001CDGSVR004001:
+    Applications: 
+      - Nginx
+  N001CDGSVR004002:
+    Applications:
+      - "Microsoft SQL Server"
+  N001CDGSVR004003:
+    Applications:
+      - Jdk
+      - "Sonatype Nexus Pro"
+  N001CDGSVR004004:
+    Applications:
+      - Bitbucket
+      - Git
+  N001CDGSVR004005:
+    Applications:
+      - Confluence
+      - Git
+  N001CDGSVR004006:
+    Applications:
+      - "Subversion Edge"
+  N001CDGSVR004007:
+    Applications:
+      - Bamboo
+      - Jdk
+      - Git
+      - Tomcat
+  N001CDGSVR004008:
+    Applications:
+      - Jdk
+      - Jira
+  N001CDGSVR004009:
+    Applications:
+      - Fisheye
+      - Crucible
+      - Git
+  N001CDGSVR004010:
+    Applications:
+      - Crowd
+

@@ -1,0 +1,9 @@
+---
+
+- name: Provision ec2 instances
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tags: ec2_provisioning
+  roles:
+    - ec2_provision

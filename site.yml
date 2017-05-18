@@ -1,0 +1,4 @@
+---
+# file: site.yml
+- include: switch_roles.yml
+- include: ec2_provision.yml

@@ -1,0 +1,115 @@
+---
+# Ensure no existing Private key exists
+#- name: Delete any existing almtools private key
+#  local_action:
+#    module: ec2_key
+#    aws_access_key: "{{ sts_aws_access_key }}"
+#    aws_secret_key: "{{ sts_aws_secret_key }}"
+#    security_token: "{{ sts_security_token }}"
+#    name: "{{ aws_keypair }}"
+#    state: absent
+#
+#- name: create a new keypair
+#  local_action:
+#    module: ec2_key
+#    aws_access_key: "{{ sts_aws_access_key }}"
+#    aws_secret_key: "{{ sts_aws_secret_key }}"
+#    security_token: "{{ sts_security_token }}"
+#    name: "{{ aws_keypair }}"
+#    state: present    
+#  register: ec2_key
+# 
+#- name: save private key
+#  local_action:
+#    module: copy
+#    content: "{{ ec2_key.key.private_key }}" 
+#    dest: "{{ private_key_file }}" 
+#    mode: 0600
+#  when: ec2_key.changed
+#
+## Create an S3 bucket to hold the private key just created
+#- name: Create an empty S3 bucket for Private key
+#  s3:
+#    aws_access_key:   "{{ sts_aws_access_key | default(omit) }}"
+#    aws_secret_key:   "{{ sts_aws_secret_key | default(omit) }}"
+#    security_token:   "{{ sts_security_token | default(omit) }}"
+#    bucket:           "{{ aws_s3_bucket_nm }}"
+#    mode:             create
+#    permission:       private
+#
+## Save Private key to the S3 bucket
+#- name: "Copy the Private Key to the S3 bucket ({{ aws_s3_bucket_nm }}) "
+#  s3:
+#    aws_access_key:   "{{ sts_aws_access_key | default(omit) }}"
+#    aws_secret_key:   "{{ sts_aws_secret_key | default(omit) }}"
+#    security_token:   "{{ sts_security_token | default(omit) }}"
+#    bucket:           "{{ aws_s3_bucket_nm }}"
+#    object:           "{{ app_nm }}.pem"
+#    src:              "{{ private_key_file }}"
+#    overwrite:        true
+#    mode:             put
+#
+#- name: Remove the Private key
+#  file:
+#    state: absent
+#    path: "{{ private_key_file }}"
+
+- name: Provision an ec2 instance
+  local_action:
+    module: ec2
+    image: "{{ aws_image }}"
+    instance_type: "{{ aws_instance_type }}"
+    aws_access_key: "{{ sts_aws_access_key }}"
+    aws_secret_key: "{{ sts_aws_secret_key }}"
+    security_token: "{{ sts_security_token }}"
+    keypair: "{{ aws_keypair }}"
+    #count: "{{ aws_quantity }}"
+    instance_tags:
+      #Name: "{{ inst_nm }}"
+      Name: "{{ item }}"
+      App_nm: "{{ app_nm }}"
+      Environment: "{{ env_nm }}" 
+    region: "{{ aws_region }}"
+    group: "{{ aws_sec_group }}"
+    vpc_subnet_id: "{{ aws_vpc_subnet_id }}"
+    assign_public_ip: yes
+    count_tag:
+      Name: "{{ item }}"
+    exact_count: 1
+    wait: true
+  with_items: "{{ all_inst_nms }}"
+  register: ec2_info
+
+- debug: 
+    var: "{{ ec2_info }}"
+    verbosity: 3
+  #with_items: "{{ ec2_info.instances }}"
+
+#- debug: 
+#    var: item
+#    verbosity: 3
+#  with_items: "{{ ec2_info.instance_ids }}"
+
+- name: Add Hosts (prior to waiting for them to start)
+  add_host: 
+    name: "{{ item.public_ip }}"
+    groups: "{{ app_nm }}_{{ env_nm }}"
+    ec2_region: "{{ aws_region }}" 
+    ec2_tag_Name: "{{ inst_nm }}"
+    ec2_tag_App_nm: "{{ app_nm }}"
+    ec2_tag_Environment: "{{ env_nm }}"
+    ec2_ip_address: "{{ item.public_ip }}"
+  with_items: "{{ ec2_info.instances }}"
+  ignore_errors: True
+
+# Ignore Error below (if any) due to the fact that
+# the targetted VPC may or may not be accessible
+- name: Wait for the instances to boot by checking the ssh port
+  wait_for: 
+    host: "{{ item.public_ip }}"
+    port: 22 
+    delay: 60 
+    timeout: 320 
+    state: started
+  with_items: "{{ ec2_info.instances }}"
+  ignore_errors: True

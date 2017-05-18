@@ -1,0 +1,9 @@
+---
+
+- name: Assume the Role that enables you to perform requisite tasks
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tags: ec2_provisioning
+  roles:
+    - assume_role
